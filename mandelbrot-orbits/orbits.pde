@@ -1,101 +1,34 @@
 // Implementation of the Mandelbrot orbits, as seen in
 // https://youtu.be/FFftmWSzgmk and https://www.geogebra.org/m/BUVhcRSv
 
-interface Axes<TIn, TOut> {
-  TOut x(TIn val);
-  TOut y(TIn val);
-  TIn xval(TOut x);
-  TIn yval(TOut y);
-}
-
-class IdentityAxes implements Axes<Integer, Integer> {
-  Integer x(Integer val) {
-    return val;
-  }
-  Integer y(Integer val) {
-    return val;
-  }
-  Integer xval(Integer x) {
-    return x;
-  }
-  Integer yval(Integer y) {
-    return y;
-  }
-}
-
-class VirtualAxes implements Axes<Integer, Integer> {
-  int xmin = 0;
-  int ymin = 0;
-  Axes<Integer, Integer> innerAxes;
-  
-  VirtualAxes(Integer xmin, Integer ymin) {
-    this.xmin = xmin;
-    this.ymin = ymin;
-    this.innerAxes = new IdentityAxes();
-  }
-
-  VirtualAxes(int xmin, int ymin, Axes<Integer, Integer> innerAxes) {
-     this.xmin = xmin;
-     this.ymin = ymin;
-     this.innerAxes = innerAxes;
-  }
-
-  Integer x(Integer val) {
-    return this.innerAxes.x(val - xmin);
+// Axis class that maps a range of pixels to a range of floating point values
+class Axis {
+  float axisMin, axisMax;
+  int pixelsMin, pixelsMax;
+  Axis(float axisMin, float axisMax, int pixelsMin, int pixelsMax) {
+    this.axisMin = axisMin;
+    this.axisMax = axisMax;
+    this.pixelsMin = pixelsMin;
+    this.pixelsMax = pixelsMax;
   }
   
-  Integer y(Integer val) {
-    return this.innerAxes.y(val - ymin);
-  }
-
-  Integer xval(Integer x) {
-    return this.innerAxes.xval(x) + xmin;
+  float fromPixel(int pixelVal) {
+    return map(pixelVal, this.pixelsMin, this.pixelsMax, this.axisMin, this.axisMax);
   }
   
-  Integer yval(Integer y) {
-    return this.innerAxes.yval(y) + ymin;
-  }
-
-  void updateXMin(int dx) {
-    this.xmin += dx;
-  }
-  
-  void updateYMin(int dy) {
-    this.ymin += dy;
+  int toPixel(float axisVal) {
+    return int(map(axisVal, this.axisMin, this.axisMax, this.pixelsMin, this.pixelsMax));    
   }
 }
 
-class ScaledAxes implements Axes<Float, Integer> {
-  Float scale;
-  Axes<Integer, Integer> innerAxes;
-  ScaledAxes(Float scale, Axes<Integer, Integer> innerAxes) {
-    this.scale = scale;
-    this.innerAxes = innerAxes;
-  }
-  
-  Integer x(Float val) {
-    return innerAxes.x(int(val/scale));
-  }
-  
-  Integer y(Float val) {
-    return innerAxes.y(int(val/scale));
-  }
-  
-  Float xval(Integer x) {
-    return innerAxes.xval(x) * scale;
-  }
-  
-  Float yval(Integer y) {
-    return innerAxes.yval(y) * scale;
-  }
-
-  void adjustScale(float factor) {
-    this.scale *= factor;
-  }
+void adjustAxisScale(Axis axis, float scaleFactor) {
+  // Scale is the ratio of the range of axis values to range of pixel values.
+  int pixelsRange = axis.pixelsMax - axis.pixelsMin;
+  float scale = (axis.axisMax - axis.axisMin) / pixelsRange;
+  scale *= scaleFactor;
+  axis.axisMin = scale * (-pixelsRange/2);
+  axis.axisMax = scale * (pixelsRange/2);
 }
-
-VirtualAxes viewport;
-ScaledAxes ax;
 
 // C = a + bi
 float Ca = 0; // Real part of `C`
@@ -104,7 +37,7 @@ float Cb = 0; // Imaginary part of `C`
 int POINT_RADIUS = 10;
 
 void drawPoint(float x, float y) {
-  ellipse(ax.x(x), ax.y(y), POINT_RADIUS, POINT_RADIUS);
+  ellipse(xaxis.toPixel(x), yaxis.toPixel(y), POINT_RADIUS, POINT_RADIUS);
 }
 
 void drawC() {
@@ -114,8 +47,8 @@ void drawC() {
 }
 
 boolean overC(int x, int y) {
-  int cx = ax.y(Ca);
-  int cy = ax.y(Cb);
+  int cx = xaxis.toPixel(Ca);
+  int cy = yaxis.toPixel(Cb);
   
   return (pow(x - cx, 2) + pow(y - cy, 2)) < pow(POINT_RADIUS, 2);
 }
@@ -139,10 +72,10 @@ void drawOrbitPoints(int numPoints) {
   stroke(0);
   for (int i = 1; i < numPoints; i++) {
      line(
-      ax.x(zas[i-1]), 
-      ax.y(zbs[i-1]), 
-      ax.x(zas[i]), 
-      ax.y(zbs[i])
+      xaxis.toPixel(zas[i-1]), 
+      yaxis.toPixel(zbs[i-1]), 
+      xaxis.toPixel(zas[i]), 
+      yaxis.toPixel(zbs[i])
     );
   }
   
@@ -153,31 +86,25 @@ void drawOrbitPoints(int numPoints) {
   }  
 }
 
+Axis xaxis;
+Axis yaxis;
+
 void setup() {
   size(1000, 1000, P2D);  
-  
-  // Create a virtual axes where (0,0) is in the center
-  // of the screen.
-  viewport = new VirtualAxes(
-    -width/2, 
-    -height/2
-  );
-  
-  // Create a scaled axes on top of the viewport that 
-  // allow zooming in/out to arbitrary scales.
+    
+  // Create a scaled axes on top of the screen pixels that allow
+  // moving the viewport and allow zooming in/out to arbitrary scales.
   float initialScale = 0.001; // Each pixel corresponds to `ax_scale` value
-  ax = new ScaledAxes(
-    initialScale,
-    viewport
-  );
+  xaxis = new Axis(initialScale*(-width/2), initialScale*(width/2), 0, width);
+  yaxis = new Axis(initialScale*(-height/2), initialScale*(height/2), 0, height);
 }
 
 void draw() {
   background(192, 64, 0);
   
   // draw axes (x = 0 and y = 0 in the scaled axes)
-  line(0, ax.y(0.0), width, ax.y(0.0));
-  line(ax.x(0.0), 0, ax.x(0.0), height);
+  line(0, yaxis.toPixel(0.0), width, yaxis.toPixel(0.0));
+  line(xaxis.toPixel(0.0), 0, xaxis.toPixel(0.0), height);
 
   drawOrbitPoints(25);
   drawC();
@@ -194,25 +121,32 @@ void mouseReleased() {
 
 void mouseDragged() {
   if (moving) {
-    Ca = ax.xval(mouseX);
-    Cb = ax.yval(mouseY);
+    Ca = xaxis.fromPixel(mouseX);
+    Cb = yaxis.fromPixel(mouseY);
   }
 }
 
 void keyPressed() {
   if (key == CODED) {
+    float dx = 0, dy = 0;
     if (keyCode == LEFT) {
-      viewport.updateXMin(10);
+      dx = xaxis.fromPixel(10) - xaxis.axisMin;
     } else if (keyCode == RIGHT) {
-      viewport.updateXMin(-10);
-    } else if (keyCode == UP) {      
-      viewport.updateYMin(10);      
+      dx = xaxis.fromPixel(-10) - xaxis.axisMin;
+    } else if (keyCode == UP) {
+      dy = yaxis.fromPixel(10) - yaxis.axisMin;
     } else if (keyCode == DOWN) {
-      viewport.updateYMin(-10);      
+      dy = yaxis.fromPixel(-10)- yaxis.axisMin;
     }
+    xaxis.axisMin += dx;
+    xaxis.axisMax += dx;
+    yaxis.axisMin += dy;
+    yaxis.axisMax += dy;    
   } else if (key == 'x' || key == 'X') {
-    ax.adjustScale(0.5);
+    adjustAxisScale(xaxis, 0.5);
+    adjustAxisScale(yaxis, 0.5);    
   } else if (key == 'z' || key == 'Z') {
-    ax.adjustScale(2);
+    adjustAxisScale(xaxis, 2);
+    adjustAxisScale(yaxis, 2);
   }
 }
