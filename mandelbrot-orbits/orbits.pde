@@ -53,15 +53,15 @@ boolean overC(int x, int y) {
   return (pow(x - cx, 2) + pow(y - cy, 2)) < pow(POINT_RADIUS, 2);
 }
 
-void drawOrbitPoints(int numPoints) {
-  assert numPoints > 1;
+void drawOrbitPoints(int maxPoints) {
+  assert maxPoints > 1;
   
-  float[] zas = new float[numPoints];
+  float[] zas = new float[maxPoints];
   zas[0] = 0;
-  float[] zbs = new float[numPoints];
+  float[] zbs = new float[maxPoints];
   zbs[0] = 0;
   
-  for (int i = 1; i < numPoints; i++) {
+  for (int i = 1; i < maxPoints; i++) {
     float prevA = zas[i-1];
     float prevB = zbs[i-1];
     zas[i] = (pow(prevA, 2) - pow(prevB, 2)) + Ca;
@@ -70,8 +70,8 @@ void drawOrbitPoints(int numPoints) {
   
   // draw line segments
   stroke(0);
-  for (int i = 1; i < numPoints; i++) {
-     line(
+  for (int i = 1; i < maxPoints; i++) {
+    line(
       xaxis.toPixel(zas[i-1]), 
       yaxis.toPixel(zbs[i-1]), 
       xaxis.toPixel(zas[i]), 
@@ -81,7 +81,7 @@ void drawOrbitPoints(int numPoints) {
   
   fill(153);
   stroke(255);
-  for (int i = 0; i < numPoints; i++) {
+  for (int i = 0; i < maxPoints; i++) {
     drawPoint(zas[i], zbs[i]);
   }  
 }
