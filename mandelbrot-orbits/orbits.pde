@@ -53,6 +53,15 @@ boolean overC(int x, int y) {
   return (pow(x - cx, 2) + pow(y - cy, 2)) < pow(POINT_RADIUS, 2);
 }
 
+// Set an arbitrary upper bound for either component of a complex number.
+// I believe that anything where the magnitude of the complex number goes
+// above 2 can be rejected but just doing something simple now and checking
+// each component against an arbitrary max.
+float MAX_COMPONENT_VALUE = 10;
+boolean isOutOfRange(float a, float b) {
+  return abs(a) > MAX_COMPONENT_VALUE || abs(b) > MAX_COMPONENT_VALUE;
+}
+
 void drawOrbitPoints(int maxPoints) {
   assert maxPoints > 1;
   
@@ -75,7 +84,8 @@ void drawOrbitPoints(int maxPoints) {
       Float.isNaN(zas[i]) || 
       Float.isInfinite(zas[i]) || 
       Float.isNaN(zbs[i]) || 
-      Float.isInfinite(zbs[i])
+      Float.isInfinite(zbs[i]) || 
+      isOutOfRange(zas[i], zbs[i])
     ) {
       break; 
     }
