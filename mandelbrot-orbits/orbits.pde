@@ -125,11 +125,12 @@ void setup() {
 
 int panSpeedX = 0;
 int panSpeedY = 0;
+float scalingFactor = 0;
 
 void draw() {
   background(192, 64, 0);
   
-  // Adjust the axes based on current panning speed
+  // Adjust the axes based on current panning speed and scaling factor
   if (panSpeedX != 0) {
     float dx = xaxis.fromPixel(panSpeedX) - xaxis.axisMin;
     xaxis.axisMin += dx;
@@ -140,6 +141,11 @@ void draw() {
     float dy = yaxis.fromPixel(panSpeedY) - yaxis.axisMin;
     yaxis.axisMin += dy;
     yaxis.axisMax += dy;
+  }
+  
+  if (scalingFactor != 0) {
+    adjustAxisScale(xaxis, scalingFactor);
+    adjustAxisScale(yaxis, scalingFactor);    
   }
 
   // draw axes (x = 0 and y = 0 in the scaled axes)
@@ -178,11 +184,9 @@ void keyPressed() {
       panSpeedY = -10;      
     }
   } else if (key == 'x' || key == 'X') {
-    adjustAxisScale(xaxis, 0.5);
-    adjustAxisScale(yaxis, 0.5);    
+    scalingFactor = 0.96;
   } else if (key == 'z' || key == 'Z') {
-    adjustAxisScale(xaxis, 2);
-    adjustAxisScale(yaxis, 2);
+    scalingFactor = 1.04;
   }
 }
 
@@ -198,5 +202,9 @@ void keyReleased() {
     } else if (keyCode == DOWN) {
       panSpeedY = 0;      
     }
+  } else if (key == 'x' || key == 'X') {
+    scalingFactor = 0;
+  } else if (key == 'z' || key == 'Z') {
+    scalingFactor = 0;
   }
 }
