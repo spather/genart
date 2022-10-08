@@ -123,9 +123,25 @@ void setup() {
   yaxis = new Axis(initialScale*(-height/2), initialScale*(height/2), 0, height);
 }
 
+int panSpeedX = 0;
+int panSpeedY = 0;
+
 void draw() {
   background(192, 64, 0);
   
+  // Adjust the axes based on current panning speed
+  if (panSpeedX != 0) {
+    float dx = xaxis.fromPixel(panSpeedX) - xaxis.axisMin;
+    xaxis.axisMin += dx;
+    xaxis.axisMax += dx;
+  }
+
+  if (panSpeedY != 0) {
+    float dy = yaxis.fromPixel(panSpeedY) - yaxis.axisMin;
+    yaxis.axisMin += dy;
+    yaxis.axisMax += dy;
+  }
+
   // draw axes (x = 0 and y = 0 in the scaled axes)
   line(0, yaxis.toPixel(0.0), width, yaxis.toPixel(0.0));
   line(xaxis.toPixel(0.0), 0, xaxis.toPixel(0.0), height);
@@ -152,25 +168,35 @@ void mouseDragged() {
 
 void keyPressed() {
   if (key == CODED) {
-    float dx = 0, dy = 0;
     if (keyCode == LEFT) {
-      dx = xaxis.fromPixel(10) - xaxis.axisMin;
+      panSpeedX = 10;
     } else if (keyCode == RIGHT) {
-      dx = xaxis.fromPixel(-10) - xaxis.axisMin;
+      panSpeedX = -10;
     } else if (keyCode == UP) {
-      dy = yaxis.fromPixel(10) - yaxis.axisMin;
+      panSpeedY = 10;      
     } else if (keyCode == DOWN) {
-      dy = yaxis.fromPixel(-10)- yaxis.axisMin;
+      panSpeedY = -10;      
     }
-    xaxis.axisMin += dx;
-    xaxis.axisMax += dx;
-    yaxis.axisMin += dy;
-    yaxis.axisMax += dy;    
   } else if (key == 'x' || key == 'X') {
     adjustAxisScale(xaxis, 0.5);
     adjustAxisScale(yaxis, 0.5);    
   } else if (key == 'z' || key == 'Z') {
     adjustAxisScale(xaxis, 2);
     adjustAxisScale(yaxis, 2);
+  }
+}
+
+
+void keyReleased() {
+  if (key == CODED) {
+    if (keyCode == LEFT) {
+      panSpeedX = 0;
+    } else if (keyCode == RIGHT) {
+      panSpeedX = 0;
+    } else if (keyCode == UP) {
+      panSpeedY = 0;      
+    } else if (keyCode == DOWN) {
+      panSpeedY = 0;      
+    }
   }
 }
