@@ -61,16 +61,30 @@ void drawOrbitPoints(int maxPoints) {
   float[] zbs = new float[maxPoints];
   zbs[0] = 0;
   
+  int numPoints = 1;
   for (int i = 1; i < maxPoints; i++) {
     float prevA = zas[i-1];
     float prevB = zbs[i-1];
+    
     zas[i] = (pow(prevA, 2) - pow(prevB, 2)) + Ca;
     zbs[i] = 2 * prevA * prevB + Cb;
+    
+    // If anything we computed is either Infinity or NaN, 
+    // stop computing more points.
+    if (
+      Float.isNaN(zas[i]) || 
+      Float.isInfinite(zas[i]) || 
+      Float.isNaN(zbs[i]) || 
+      Float.isInfinite(zbs[i])
+    ) {
+      break; 
+    }
+    numPoints++;
   }
   
   // draw line segments
   stroke(0);
-  for (int i = 1; i < maxPoints; i++) {
+  for (int i = 1; i < numPoints; i++) {
     line(
       xaxis.toPixel(zas[i-1]), 
       yaxis.toPixel(zbs[i-1]), 
@@ -81,7 +95,7 @@ void drawOrbitPoints(int maxPoints) {
   
   fill(153);
   stroke(255);
-  for (int i = 0; i < maxPoints; i++) {
+  for (int i = 0; i < numPoints; i++) {
     drawPoint(zas[i], zbs[i]);
   }  
 }
