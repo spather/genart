@@ -79,7 +79,7 @@ void drawOrbitPoints(int maxPoints) {
     zbs[i] = 2 * prevA * prevB + Cb;
     
     // If anything we computed is either Infinity or NaN, 
-    // stop computing more points.
+    // or out of range, stop computing more points.
     if (
       Float.isNaN(zas[i]) || 
       Float.isInfinite(zas[i]) || 
