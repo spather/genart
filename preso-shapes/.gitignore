@@ -1,0 +1,3 @@
+# Ignore .png output files in shapes/ and odd-shapes/
+odd_shapes/*.png
+shapes/*.png
